@@ -1,0 +1,49 @@
+<ng-template #stockItem let-stock="stock">
+  <div class="flex items-center border-r border-gray-800 px-[0.5em] h-full" style="font-size: 50cqh;">
+      <span class="font-bold text-gray-200 mr-[0.3em] font-sans whitespace-nowrap">{{ stock.symbol }}</span>
+      
+      <!-- Price & Chevron -->
+      <span class="font-bold mr-[0.3em] whitespace-nowrap flex items-center" 
+            [class.text-green-500]="getTrend(stock) === 'up'" 
+            [class.text-red-500]="getTrend(stock) === 'down'"
+            [class.text-gray-300]="getTrend(stock) === 'neutral'">
+            
+            <span class="mr-[0.1em] text-[0.8em]" *ngIf="getTrend(stock) === 'up'">▲</span>
+            <span class="mr-[0.1em] text-[0.8em]" *ngIf="getTrend(stock) === 'down'">▼</span>
+            
+            {{ stock.price | number:'1.2-3' }}
+      </span>
+      
+      <div class="flex flex-col justify-center text-[0.4em] leading-none mr-[0.3em] font-semibold whitespace-nowrap">
+          <span [class.text-green-500]="getTrend(stock) === 'up'" 
+                [class.text-red-500]="getTrend(stock) === 'down'"
+                [class.text-gray-400]="getTrend(stock) === 'neutral'">{{ stock.changePercent }}%</span>
+          <span [class.text-green-500]="getTrend(stock) === 'up'" 
+                [class.text-red-500]="getTrend(stock) === 'down'"
+                [class.text-gray-400]="getTrend(stock) === 'neutral'">{{ stock.change | number:'1.2-2' }}</span>
+      </div>
+
+      <div class="flex flex-col justify-center text-[0.4em] leading-none text-gray-400 font-semibold whitespace-nowrap">
+          <span>H: {{ stock.high | number:'1.2-2' }}</span>
+          <span>L: {{ stock.low | number:'1.2-2' }}</span>
+      </div>
+  </div>
+</ng-template>
+
+<!-- Main Container -->
+<div class="w-full h-full bg-black text-white overflow-hidden relative flex items-center" style="container-type: size;">
+  <div class="flex animate-scroll shrink-0 hover:pause">
+       <!-- First Set -->
+       <div class="flex shrink-0">
+           <ng-container *ngFor="let s of displayStocks()">
+               <ng-container *ngTemplateOutlet="stockItem; context: { stock: s }"></ng-container>
+           </ng-container>
+       </div>
+       <!-- Duplicate Set -->
+       <div class="flex shrink-0">
+           <ng-container *ngFor="let s of displayStocks()">
+               <ng-container *ngTemplateOutlet="stockItem; context: { stock: s }"></ng-container>
+           </ng-container>
+       </div>
+  </div>
+</div>

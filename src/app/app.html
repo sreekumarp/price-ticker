@@ -1,0 +1,20 @@
+<!-- App Wrapper -->
+<div class="w-full h-screen bg-neutral-900 flex flex-col items-center justify-center p-8">
+  <h1 class="text-white text-3xl font-light mb-8 font-sans tracking-wide">Dynamic Stock Ticker</h1>
+  
+  <!-- Resizable Container for Demo -->
+  <!-- We use CSS resize property here. -->
+  <div class="border border-yellow-500/50 rounded-lg overflow-hidden shadow-2xl relative bg-black" 
+       style="width: 800px; height: 60px; resize: both; overflow: hidden; min-width: 300px; min-height: 40px; box-shadow: 0 0 20px rgba(234, 179, 8, 0.1);">
+     
+      <app-price-ticker class="block w-full h-full"></app-price-ticker>
+
+      <!-- Resize Handle Hint (Corner visual) -->
+      <div class="absolute bottom-0 right-0 w-4 h-4 bg-gradient-to-tl from-yellow-500 to-transparent opacity-50 pointer-events-none"></div>
+  </div>
+
+  <p class="text-gray-500 mt-6 text-sm font-light">
+      Drag the bottom-right corner to resize. <br>
+      Font size automatically adjusts to container height.
+  </p>
+</div>

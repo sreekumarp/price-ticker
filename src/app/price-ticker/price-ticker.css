@@ -1,0 +1,19 @@
+.animate-scroll {
+    display: flex;
+    width: max-content;
+    animation: scroll 30s linear infinite;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.hover\:pause:hover {
+    animation-play-state: paused;
+}:host { display: block; width: 100%; height: 100%; }

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit, signal, computed, effect } from '@angular/core';
+import { Component, ElementRef, ViewChild, AfterViewInit, signal, computed, effect, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 interface Stock {
@@ -20,6 +20,7 @@ interface Stock {
 })
 export class PriceTickerComponent implements AfterViewInit {
   @ViewChild('container') containerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('firstSet') firstSetRef!: ElementRef<HTMLDivElement>;
   
   // Base data
   stocks = signal<Stock[]>([
@@ -29,21 +30,93 @@ export class PriceTickerComponent implements AfterViewInit {
     // { symbol: 'Google', price: 135.20, change: -0.5, changePercent: -0.37, high: 136.00, low: 134.50, prevPrice: 135.70 },
   ]);
 
-  // Duplicated data for infinite scroll
-  // We will duplicate the list enough times to ensure it covers the screen width plus some buffer.
-  // For simplicity in this keyframe approach, we usually just need 2 sets if the animation is 0% -> -50%.
-  // Or if we animate 0 -> -100% of the *original* width, we need enough copies to fill the container + original width.
-  // Let's create a computed signal that just repeats the data X times.
-  // Since we don't know the width yet, standard marquee often just doubles the content.
+  multiplier = signal(1);
+  totalDuration = signal(5); // seconds
+
   displayStocks = computed(() => {
-    return this.stocks();
+    const base = this.stocks();
+    const mult = this.multiplier();
+    let result: Stock[] = [];
+    for (let i = 0; i < mult; i++) {
+        result = result.concat(base);
+    }
+    return result;
   });
 
-  constructor() {}
+  constructor(private elementRef: ElementRef, private ngZone: NgZone) {}
 
   ngAfterViewInit() {
-    // We can use ResizeObserver here if we want JS-based exact font sizing,
-    // but we will try CSS container queries first.
+    this.setupResizeObserver();
+  }
+
+  setupResizeObserver() {
+    // Observer on the HOST element or the parent container
+    const observer = new ResizeObserver((entries) => {
+      this.ngZone.run(() => {
+        this.calculateLayout();
+      });
+    });
+    
+    // We observe the host element to trigger recalcs on resize
+    observer.observe(this.elementRef.nativeElement);
+    
+    // Initial Calc
+    setTimeout(() => this.calculateLayout(), 0);
+  }
+
+  calculateLayout() {
+    if (!this.firstSetRef) return;
+
+    const containerWidth = this.elementRef.nativeElement.offsetWidth;
+    const firstSetEl = this.firstSetRef.nativeElement;
+    
+    // Check width of current content (based on current multiplier)
+    const currentContentWidth = firstSetEl.offsetWidth;
+    
+    if (currentContentWidth === 0) return; // Not visible yet
+
+    // Calculate the width of a single "original" set (approx)
+    // We assume currentContentWidth is roughly multiplier * singleSetWidth.
+    // However, we want to know if currentContentWidth is enough.
+    // We need currentContentWidth >= containerWidth.
+    // To match "never ending" comfortably and avoid gaps during the transition:
+    // The animation moves by -currentContentWidth (Set 1 width).
+    // The total view is Set 1 + Set 2.
+    // When Set 1 moves completely out, Set 2 is exactly in place.
+    // Gap happens if moving part is narrower than screen? NO.
+    // Gap happens if total width of content rendered < screen width? 
+    // Yes, if Set 2 ends before screen logic.
+    // Actually, we just need Set 1 width > Container Width.
+    // If Set 1 width > Container Width, then when we scroll 100% of Set 1, 
+    // we have always covered the screen (assuming Set 2 follows immediately).
+    
+    const singleSetWidth = currentContentWidth / this.multiplier(); 
+    // singleSetWidth might be 0 if stocks is empty?
+    if (singleSetWidth === 0) return;
+
+    // We want Total Width of displayStocks >= containerWidth + some buffer
+    const neededMultiplier = Math.ceil(containerWidth / singleSetWidth) + 1; // +1 for safety
+
+    if (neededMultiplier !== this.multiplier()) {
+        this.multiplier.set(neededMultiplier);
+    }
+
+    // Adjust Speed
+    // Constant speed = X pixels / second.
+    // Let's say we want 100px / second.
+    const speed = 100;
+    // The animation distance is the width of ONE SET (which is now `neededMultiplier * singleSetWidth`).
+    // Because we animate translateX(-50%) of the Wrapper which holds TWO sets.
+    // Wait, -50% of (Set1 + Set2) = -Width(Set1).
+    // So distance = currentContentWidth (after update).
+    // We need to estimate the NEW width.
+    const expectedWidth = neededMultiplier * singleSetWidth;
+    
+    // Duration = Distance / Speed
+    const duration = expectedWidth / speed;
+    
+    // Update duration
+    this.totalDuration.set(duration);
   }
 
   getTrend(stock: Stock): 'up' | 'down' | 'neutral' {

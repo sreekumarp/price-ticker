@@ -32,9 +32,9 @@
 
 <!-- Main Container -->
 <div class="w-full h-full bg-black text-white overflow-hidden relative flex items-center" style="container-type: size;">
-  <div class="flex animate-scroll shrink-0 hover:pause">
+  <div class="flex animate-scroll shrink-0 hover:pause" [style.animation-duration.s]="totalDuration()">
        <!-- First Set -->
-       <div class="flex shrink-0">
+       <div class="flex shrink-0" #firstSet>
            <ng-container *ngFor="let s of displayStocks()">
                <ng-container *ngTemplateOutlet="stockItem; context: { stock: s }"></ng-container>
            </ng-container>
